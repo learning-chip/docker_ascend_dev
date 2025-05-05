@@ -2,15 +2,20 @@
 
 ## Build image
 
-Prepare installer
+Prepare installer (example for 910B)
 
 ```bash
+cd installers
 wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.0.0/Ascend-cann-toolkit_8.0.0_linux-x86_64.run
-
 wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.0.0/Ascend-cann-kernels-910b_8.0.0_linux-x86_64.run
+# could also download during docker build, but too big, better download manually
 ```
 
-Put installer under `./installers` dir so that Dockerfile can find it
+(link obtained from https://www.hiascend.com/developer/download/community/result?module=pt+cann&cann=8.0.0.beta1)
+
+Put installer under `./installers` dir so that Dockerfile can find it.
+
+Then build image:
 
 ```
 sudo docker build . -t torch_npu_cann:8.0.beta1 \
