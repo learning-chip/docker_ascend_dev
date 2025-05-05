@@ -1,0 +1,88 @@
+FROM ubuntu:22.04
+ARG DEBIAN_FRONTEND=noninteractive
+
+# system dependencies for CANN
+# https://www.hiascend.com/document/detail/zh/canncommercial/700/envdeployment/instg/instg_0028.html
+RUN apt-get update && apt-get install -y \
+    git vim wget curl unzip tar lcov openssl \
+    gcc g++ make cmake zlib1g zlib1g-dev openssl libsqlite3-dev \
+    libssl-dev libffi-dev libbz2-dev libxslt1-dev unzip pciutils \
+    net-tools libblas-dev gfortran libblas3 llvm
+
+# Python installation
+WORKDIR /installers/python/
+
+# download python installers
+RUN wget --progress=bar:force:noscroll --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-py311_24.9.2-0-Linux-x86_64.sh
+
+# Conda Python
+ENV CONDA_HOME=/root/miniconda
+RUN bash ./Miniconda3-py311_24.9.2-0-Linux-x86_64.sh -b -p $CONDA_HOME
+
+# Python dependencies for CANN
+RUN . $CONDA_HOME/bin/activate \
+    && pip install --no-cache-dir \
+    attrs numpy decorator sympy cffi pyyaml pathlib2 psutil protobuf scipy requests absl-py
+
+# CANN installers
+COPY ./installers/Ascend-cann-toolkit_8.0.0_linux-x86_64.run /installers/cann/
+COPY ./installers/Ascend-cann-kernels-910b_8.0.0_linux-x86_64.run /installers/cann/
+
+WORKDIR /installers/cann/
+RUN . $CONDA_HOME/bin/activate \
+    && bash ./Ascend-cann-toolkit_8.0.0_linux-x86_64.run --install --quiet \
+    && bash ./Ascend-cann-kernels-910b_8.0.0_linux-x86_64.run --install --quiet
+
+# NOTE: until this stage, can already compile & run AscendC code in C++ without PyTorch interface
+
+# download torch and torch_npu installers
+# should match CANN version: https://gitee.com/ascend/pytorch#ascend-auxiliary-software
+RUN wget --progress=bar:force:noscroll --no-check-certificate https://download.pytorch.org/whl/cpu/torch-2.4.0%2Bcpu-cp311-cp311-linux_x86_64.whl
+RUN wget --progress=bar:force:noscroll --no-check-certificate https://gitee.com/ascend/pytorch/releases/download/v6.0.0-pytorch2.4.0/torch_npu-2.4.0.post2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+RUN . $CONDA_HOME/bin/activate \
+    && pip install ./torch-2.4.0+cpu-cp311-cp311-linux_x86_64.whl \
+    && pip install ./torch_npu-2.4.0.post2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+
+# extra utils
+RUN . $CONDA_HOME/bin/activate \
+    && pip install \
+    ipython pytest expecttest hypothesis \
+    pybind11 pybind11-stubgen \
+    bfloat16
+# pybind11 is needed for torch extension
+# bfloat16 is needed for generate input data in numpy
+
+# fix bug: Failed to import Python module [AttributeError: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead..].
+RUN . $CONDA_HOME/bin/activate \
+    && pip install --no-cache-dir numpy==1.26.4
+
+# Pre-compile ascendc-templates https://gitee.com/ascend/ascendc-templates
+# Tested with commit 1ba93d0 on 2025/04/28
+# https://gitee.com/ascend/ascendc-templates/commit/1ba93d0d300950a4eb616ddf271c7e43024b4e94
+WORKDIR /installers/
+RUN git clone https://gitee.com/ascend/ascendc-templates \
+    && cd ascendc-templates \
+    && git checkout 1ba93d0d300950a4eb616ddf271c7e43024b4e94
+
+WORKDIR /installers/ascendc-templates
+
+# compile C++ examples
+RUN . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+    && bash scripts/build.sh 00_basic_matmul \
+    && bash scripts/build.sh 06_optimized_matmul \
+    && bash scripts/build.sh 12_quant_matmul \
+    && bash scripts/build.sh 19_mla
+
+# compile Python extension
+# Append `libascend_hal.so` path (devlib) to LD_LIBRARY_PATH, follow https://github.com/vllm-project/vllm-ascend/blob/v0.8.4rc2/Dockerfile#L51
+RUN . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+    && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/`uname -i`-linux/devlib \
+    && bash scripts/build.sh torch_library \
+    && bash scripts/build.sh python_extension \
+    && pip install output/python_extension/torch_act-*.whl
+
+# NOTE: here just test compile 
+# For actual execution, need passing necessary device args to `docker run`
