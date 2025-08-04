@@ -37,6 +37,8 @@ sudo docker run --rm -it --ipc=host --privileged \
     -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
     -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
     -v /etc/ascend_install.info:/etc/ascend_install.info:ro \
+    -v $HOME:/mounted_home \
+    -w /mounted_home \
     torch_npu_cann:8.2.RC1 \
     /bin/bash
 
@@ -63,15 +65,9 @@ pytest -v test_python_extension.py -k "test_basic_matmul"
 Should get:
 
 ```
-test_basic_matmul_pybind (__main__.ActTest.test_basic_matmul_pybind) ... ok
-test_basic_matmul_pybind_bf16 (__main__.ActTest.test_basic_matmul_pybind_bf16) ... ok
-test_basic_matmul_torch_lib (__main__.ActTest.test_basic_matmul_torch_lib) ... ok
-test_grouped_matmul_slice_k_pybind (__main__.ActTest.test_grouped_matmul_slice_k_pybind) ... ok
-test_grouped_matmul_slice_m_pybind (__main__.ActTest.test_grouped_matmul_slice_m_pybind) ... ok
-test_optimized_matmul_pybind (__main__.ActTest.test_optimized_matmul_pybind) ... ok
+test_python_extension.py::CatlassTest::test_basic_matmul_pybind PASSED                                                   [ 33%]
+test_python_extension.py::CatlassTest::test_basic_matmul_pybind_bf16 PASSED                                              [ 66%]
+test_python_extension.py::CatlassTest::test_basic_matmul_torch_lib PASSED                                                [100%]
 
-----------------------------------------------------------------------
-Ran 6 tests in 2.402s
-
-OK
+=============================================== 3 passed, 3 deselected in 6.05s ================================================
 ```
