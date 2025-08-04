@@ -56,7 +56,7 @@ python ../../examples/19_mla/gen_data.py 1 1 128 16 16 128 half
 
 # Torch examples
 cd /installers/catlass/examples/python_extension/tests
-python test_python_extension.py -v
+pytest -v test_python_extension.py -k "test_basic_matmul"
 ```
 
 
