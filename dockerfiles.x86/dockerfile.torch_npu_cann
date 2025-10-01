@@ -74,31 +74,31 @@ RUN git clone --recursive https://github.com/tile-ai/tilelang-ascend.git \
     && bash install_ascend.sh
 
 # Pre-compile catlass
-# WORKDIR /installers/
-# RUN git clone https://gitcode.com/cann/catlass \
-#     && cd catlass \
-#     && git checkout v1.0.0
+WORKDIR /installers/
+RUN git clone https://gitcode.com/cann/catlass \
+    && cd catlass \
+    && git checkout v1.0.0
 
-# WORKDIR /installers/catlass
+WORKDIR /installers/catlass
 
-# # compile C++ examples
-# RUN . $CONDA_HOME/bin/activate \
-#     && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
-#     && bash scripts/build.sh 00_basic_matmul \
-#     && bash scripts/build.sh 06_optimized_matmul \
-#     && bash scripts/build.sh 12_quant_matmul \
-#     && bash scripts/build.sh 19_mla
+# compile C++ examples
+RUN . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+    && bash scripts/build.sh 00_basic_matmul \
+    && bash scripts/build.sh 06_optimized_matmul \
+    && bash scripts/build.sh 12_quant_matmul \
+    && bash scripts/build.sh 19_mla
 
-# # compile Python extension
-# # Append `libascend_hal.so` path (devlib) to LD_LIBRARY_PATH, follow https://github.com/vllm-project/vllm-ascend/blob/v0.8.4rc2/Dockerfile#L51
-# RUN . $CONDA_HOME/bin/activate \
-#     && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
-#     && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/`uname -i`-linux/devlib \
-#     && bash scripts/build.sh torch_library \
-#     && bash scripts/build.sh python_extension \
-#     && pip install output/python_extension/*.whl
+# compile Python extension
+# Append `libascend_hal.so` path (devlib) to LD_LIBRARY_PATH, follow https://github.com/vllm-project/vllm-ascend/blob/v0.8.4rc2/Dockerfile#L51
+RUN . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+    && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/`uname -i`-linux/devlib \
+    && bash scripts/build.sh torch_library \
+    && bash scripts/build.sh python_extension \
+    && pip install output/python_extension/*.whl
 
-# # NOTE: here just test compile
-# # For actual execution, need passing necessary device args to `docker run`
+# NOTE: here just test compile
+# For actual execution, need passing necessary device args to `docker run`
 
-# WORKDIR /installers/
+WORKDIR /installers/
