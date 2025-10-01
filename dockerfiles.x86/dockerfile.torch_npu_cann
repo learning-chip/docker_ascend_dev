@@ -25,15 +25,18 @@ RUN . $CONDA_HOME/bin/activate \
     attrs numpy decorator sympy cffi pyyaml pathlib2 psutil protobuf scipy requests absl-py
 
 # CANN installers
-COPY ./installers/Ascend-cann-toolkit_8.2.RC1_linux-x86_64.run /installers/cann/
-COPY ./installers/Ascend-cann-kernels-910b_8.2.RC1_linux-x86_64.run /installers/cann/
-
 WORKDIR /installers/cann/
-RUN . $CONDA_HOME/bin/activate \
-    && bash ./Ascend-cann-toolkit_8.2.RC1_linux-x86_64.run --install --quiet \
-    && bash ./Ascend-cann-kernels-910b_8.2.RC1_linux-x86_64.run --install --quiet
 
-# NOTE: until this stage, can already compile & run AscendC code in C++ without PyTorch interface
+COPY ./installers/Ascend-cann-toolkit_8.2.RC2_linux-x86_64.run /installers/cann/
+COPY ./installers/Ascend-cann-kernels-910b_8.2.RC2_linux-x86_64.run /installers/cann/
+RUN . $CONDA_HOME/bin/activate \
+    && bash ./Ascend-cann-toolkit_8.2.RC2_linux-x86_64.run --install --quiet \
+    && bash ./Ascend-cann-kernels-910b_8.2.RC2_linux-x86_64.run --install --quiet
+
+COPY ./installers/Ascend-cann-nnal_8.2.RC2_linux-x86_64.run /installers/cann/
+RUN . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+    && bash ./Ascend-cann-nnal_8.2.RC2_linux-x86_64.run --install --quiet
 
 # download torch and torch_npu installers
 # should match CANN version: https://gitee.com/ascend/pytorch#ascend-auxiliary-software
@@ -56,40 +59,40 @@ RUN . $CONDA_HOME/bin/activate \
 RUN . $CONDA_HOME/bin/activate \
     && pip install --no-cache-dir numpy==1.26.4
 
+# Install tilelang
+WORKDIR /installers/
+
+# tested on commit of 2025/09/30 https://github.com/tile-ai/tilelang-ascend/commit/df619e826513a1b5024fdf64896b4afe3c2c6783
+RUN git clone --recursive https://github.com/tile-ai/tilelang-ascend.git \
+    && cd tilelang-ascend \
+    && bash install_ascend.sh
+
 # Pre-compile catlass
-WORKDIR /installers/
-RUN git clone https://gitee.com/ascend/catlass\
-    && cd catlass \
-    && git checkout v1.0.0
+# WORKDIR /installers/
+# RUN git clone https://gitcode.com/cann/catlass \
+#     && cd catlass \
+#     && git checkout v1.0.0
 
-WORKDIR /installers/catlass
+# WORKDIR /installers/catlass
 
-# compile C++ examples
-RUN . $CONDA_HOME/bin/activate \
-    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
-    && bash scripts/build.sh 00_basic_matmul \
-    && bash scripts/build.sh 06_optimized_matmul \
-    && bash scripts/build.sh 12_quant_matmul \
-    && bash scripts/build.sh 19_mla
+# # compile C++ examples
+# RUN . $CONDA_HOME/bin/activate \
+#     && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+#     && bash scripts/build.sh 00_basic_matmul \
+#     && bash scripts/build.sh 06_optimized_matmul \
+#     && bash scripts/build.sh 12_quant_matmul \
+#     && bash scripts/build.sh 19_mla
 
-# compile Python extension
-# Append `libascend_hal.so` path (devlib) to LD_LIBRARY_PATH, follow https://github.com/vllm-project/vllm-ascend/blob/v0.8.4rc2/Dockerfile#L51
-RUN . $CONDA_HOME/bin/activate \
-    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
-    && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/`uname -i`-linux/devlib \
-    && bash scripts/build.sh torch_library \
-    && bash scripts/build.sh python_extension \
-    && pip install output/python_extension/*.whl
+# # compile Python extension
+# # Append `libascend_hal.so` path (devlib) to LD_LIBRARY_PATH, follow https://github.com/vllm-project/vllm-ascend/blob/v0.8.4rc2/Dockerfile#L51
+# RUN . $CONDA_HOME/bin/activate \
+#     && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
+#     && export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/Ascend/ascend-toolkit/latest/`uname -i`-linux/devlib \
+#     && bash scripts/build.sh torch_library \
+#     && bash scripts/build.sh python_extension \
+#     && pip install output/python_extension/*.whl
 
-# NOTE: here just test compile 
-# For actual execution, need passing necessary device args to `docker run`
+# # NOTE: here just test compile
+# # For actual execution, need passing necessary device args to `docker run`
 
-# extra operators
-WORKDIR /installers/cann/
-
-COPY ./installers/Ascend-cann-nnal_8.2.RC1_linux-x86_64.run /installers/cann/
-RUN . $CONDA_HOME/bin/activate \
-    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
-    && bash ./Ascend-cann-nnal_8.2.RC1_linux-x86_64.run --install --quiet
-
-WORKDIR /installers/
+# WORKDIR /installers/

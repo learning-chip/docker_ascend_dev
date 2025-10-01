@@ -6,13 +6,13 @@ Prepare installer (example for 910B)
 
 ```bash
 cd installers
-wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC1/Ascend-cann-toolkit_8.2.RC1_linux-x86_64.run
-wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC1/Ascend-cann-kernels-910b_8.2.RC1_linux-x86_64.run
-wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC1/Ascend-cann-nnal_8.2.RC1_linux-x86_64.run
+wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC2/Ascend-cann-toolkit_8.2.RC2_linux-x86_64.run
+wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC2/Ascend-cann-kernels-910b_8.2.RC2_linux-x86_64.run
+wget https://ascend-repo.obs.cn-east-2.myhuaweicloud.com/CANN/CANN%208.2.RC2/Ascend-cann-nnal_8.2.RC2_linux-x86_64.run
 # could also download during docker build, but too big, better download manually
 ```
 
-(link obtained from https://www.hiascend.com/developer/download/community/result?module=pt+cann&pt=7.1.0&cann=8.2.RC1)
+(link obtained from https://www.hiascend.com/developer/download/community/result?module=pt+cann&pt=7.1.0&cann=8.2.RC2)
 
 Put installer under `./installers` dir so that Dockerfile can find it.
 
@@ -20,15 +20,15 @@ Then build image:
 
 ```bash
 # under top dir
-sudo docker build . -t torch_npu_cann:8.2.RC1 \
+sudo docker build . -t torch_npu_cann:8.2.RC2 \
      -f dockerfiles.x86/dockerfile.torch_npu_cann
 ```
 
-## Test run
 
-Run built-in examples
+## Launch docker runtime
 
 ```bash
+# NOTE: change `--device` to actual device id on your server
 sudo docker run --rm -it --ipc=host --privileged \
     --device=/dev/davinci2 --device=/dev/davinci3 \
     --device=/dev/davinci_manager \
@@ -39,13 +39,29 @@ sudo docker run --rm -it --ipc=host --privileged \
     -v /etc/ascend_install.info:/etc/ascend_install.info:ro \
     -v $HOME:/mounted_home \
     -w /mounted_home \
-    torch_npu_cann:8.2.RC1 \
+    torch_npu_cann:8.2.RC2 \
     /bin/bash
 
 # inside container
 source $CONDA_HOME/bin/activate
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64/driver:$LD_LIBRARY_PATH
+```
+
+### Run tilelang-ascend examples
+
+```bash
+# inside container launched above
+cd /installers/tilelang-ascend/
+source set_env.sh
+cd examples/gemm
+python example_gemm.py  # should get "Kernel Output Match!"
+```
+
+### Run catlass examples
+
+```bash
+# inside container launched above
 
 # C++ examples
 cd /installers/catlass/build/bin
