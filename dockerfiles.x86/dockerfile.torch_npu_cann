@@ -59,6 +59,10 @@ RUN . $CONDA_HOME/bin/activate \
 RUN . $CONDA_HOME/bin/activate \
     && pip install --no-cache-dir numpy==1.26.4
 
+# fix bug: 'GLIBCXX_3.4.30' not found
+RUN . $CONDA_HOME/bin/activate \
+    conda install -y -c conda-forge libstdcxx-ng 
+
 # Install tilelang
 WORKDIR /installers/
 
