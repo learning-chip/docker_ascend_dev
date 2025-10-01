@@ -61,7 +61,7 @@ RUN . $CONDA_HOME/bin/activate \
 
 # fix bug: 'GLIBCXX_3.4.30' not found
 RUN . $CONDA_HOME/bin/activate \
-    conda install -y -c conda-forge libstdcxx-ng 
+    && conda install -y -c conda-forge libstdcxx-ng 
 
 # Install tilelang
 WORKDIR /installers/
@@ -78,6 +78,7 @@ WORKDIR /installers/
 RUN git clone https://gitcode.com/cann/catlass \
     && cd catlass \
     && git checkout v1.0.0
+# NOTE: test newer tag
 
 WORKDIR /installers/catlass
 
