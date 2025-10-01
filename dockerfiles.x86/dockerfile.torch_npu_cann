@@ -65,6 +65,8 @@ WORKDIR /installers/
 # tested on commit of 2025/09/30 https://github.com/tile-ai/tilelang-ascend/commit/df619e826513a1b5024fdf64896b4afe3c2c6783
 RUN git clone --recursive https://github.com/tile-ai/tilelang-ascend.git \
     && cd tilelang-ascend \
+    && . $CONDA_HOME/bin/activate \
+    && . /usr/local/Ascend/ascend-toolkit/set_env.sh \
     && bash install_ascend.sh
 
 # Pre-compile catlass
