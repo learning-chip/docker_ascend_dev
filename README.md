@@ -1,4 +1,4 @@
-# Docker environment for operator kernel development on Ascend NPU
+# Dockerfile for Ascend NPU operator kernel development
 
 ## Build image
 
